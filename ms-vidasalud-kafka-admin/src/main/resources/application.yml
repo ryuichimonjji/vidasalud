@@ -1,0 +1,13 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ms-vidasalud-kafka-admin
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    admin:
+      # Si el cluster no responde, las operaciones fallan en 10 s en vez de quedar colgadas
+      properties:
+        request.timeout.ms: 10000
+        default.api.timeout.ms: 10000

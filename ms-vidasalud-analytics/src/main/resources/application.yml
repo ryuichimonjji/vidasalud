@@ -1,0 +1,45 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: ms-vidasalud-analytics
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    consumer:
+      # Sin offset commiteado, el grupo parte desde el inicio del topico
+      auto-offset-reset: earliest
+      # El commit lo hace Spring despues de procesar cada registro (ack-mode: record)
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # ErrorHandlingDeserializer evita que un mensaje corrupto (poison pill) detenga el consumo
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        # El productor (ms-vidasalud-appointments) no envia headers de tipo
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: cl.duoc.vidasalud.analytics.dto
+        max.poll.records: 100
+        session.timeout.ms: 15000
+        heartbeat.interval.ms: 5000
+    listener:
+      ack-mode: record
+      # Un hilo por particion (los topicos tienen 3 particiones)
+      concurrency: 3
+
+kafka:
+  topics:
+    events: vidasalud.appointments.events
+    analytics: vidasalud.appointments.analytics
+  groups:
+    audit: vidasalud-audit-group
+    analytics: vidasalud-analytics-group
+  retry:
+    max-attempts: 3
+    initial-interval-ms: 1000
+    multiplier: 2.0
+    max-interval-ms: 8000
+
+logging:
+  level:
+    cl.duoc.vidasalud.analytics: INFO
